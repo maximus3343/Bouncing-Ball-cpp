@@ -1,7 +1,6 @@
 #include "../include/clgl_manager.hpp"
 #include "../include/fps.hpp"
 #include <iostream>
-#include <tbb/tbb.h>
 
 // Window size.
 constexpr int width = 1600, height = 1600;

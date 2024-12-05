@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
+#define R(...)                                                                 \
+  std::string(" " #__VA_ARGS__ " ") // evil stringification macro, similar
+                                    // syntax to raw string R"(...)"
 
-// Kernel defined in a separate file.
-
-extern const std::string kernel_source;
+// Kernel code to handle ball compute.
+const std::string kernel_source();

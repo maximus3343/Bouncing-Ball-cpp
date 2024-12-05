@@ -25,7 +25,7 @@ GLFWwindow *CLGL_Manager::init(int width, int height) {
   // Create the vertices buffer shared by OpenCL and OpenGL.
   create_vert_buffer();
 
-  init_program(kernel_source);
+  init_program(kernel_source());
 
   // Create shader program to display circles.
   GLuint program =
