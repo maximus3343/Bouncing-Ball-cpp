@@ -51,7 +51,8 @@ Ball create_ball() {
   ball.y = coord_value(gen);
   ball.vx = velocity_value();
   ball.vy = velocity_value();
-  ball.radius = radius_value();
+  // ball.radius = radius_value();
+  ball.radius = 0.075;
   ball.gravity = gravity_value(gen);
 
   return ball;

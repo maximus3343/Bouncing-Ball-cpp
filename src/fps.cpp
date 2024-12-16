@@ -1,5 +1,4 @@
 #include "../include/fps.hpp"
-#include <chrono>
 
 FPS_Counter::FPS_Counter() : _frame_count(0), _elapsed_time(0.0) {
   _start_time = std::chrono::high_resolution_clock::now();

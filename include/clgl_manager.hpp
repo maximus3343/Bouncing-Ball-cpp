@@ -16,7 +16,7 @@
 // Handles OpenCL and OpenGL interoperability.
 class CLGL_Manager {
 public:
-  CLGL_Manager(int num_balls);
+  CLGL_Manager(int num_balls, int num_vertices);
   ~CLGL_Manager();
 
   // Must be called first.
@@ -36,10 +36,10 @@ private:
   cl::Program _program;
 
   const int _num_balls;
-  const int _num_vertices{200}; // Num of vertices to display each ball.
+  const int _num_vertices; // Num of vertices to display each ball.
   cl::Buffer _balls_buffer;
-  cl::BufferGL _vertices_buffer;          // Use with OpenCL.
-  GLuint _vertices_buffer_id{0}, _vao{0}; // VBO and VAO.
+  cl::BufferGL _vbo_cl;     // Use with OpenCL.
+  GLuint _vbos[2], _vao{0}; // VBO and VAO.
 
   // Init OpenGL.
   bool init_GLFW();
@@ -54,10 +54,13 @@ private:
   GLFWwindow *create_window(int width, int height, const std::string &title);
 
   // Create the vert_buffer shared b/w OpenGL and OpenCL.
-  void create_vert_buffer();
+  void create_vbo();
 
   // Given the current pos_buffer, update the vertices.
   void update_vertices();
+
+  // Print the vertices. For debugging only.
+  void print_vertices();
 
   // Updates coords based on speed.
   void update_pos();
@@ -68,14 +71,6 @@ private:
   // Handles collisions with balls.
   void handle_ball_colls();
 };
-
-// Compiles shader and returns it.
-// Type of shader to compile, and its associated source code.
-GLuint compile_shader(GLenum type, const char *source);
-
-// Creates CLGL_Manager out of shader source codes.
-GLuint create_shader_CLGL_Manager(const std::string &vertexShaderSource,
-                                  const std::string &fragmentShaderSource);
 
 // Tries to compile the kernel, and outputs error if .cl code is wrong.
 // Used this since I did not have a compiler for the kernel code.

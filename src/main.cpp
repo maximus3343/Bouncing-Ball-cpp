@@ -1,6 +1,5 @@
 #include "../include/clgl_manager.hpp"
 #include "../include/fps.hpp"
-#include <iostream>
 
 // Window size.
 constexpr int width = 1600, height = 1600;
@@ -11,8 +10,9 @@ int main(int argc, char *argv[]) {
 
   // Creates the balls and stores them in the program.
   int num_balls = std::stoi(argv[1]);
+  int num_vertices = std::stoi(argv[2]);
 
-  CLGL_Manager prog(num_balls);
+  CLGL_Manager prog(num_balls, num_vertices);
   auto window = prog.init(width, height);
 
   FPS_Counter fps_counter;

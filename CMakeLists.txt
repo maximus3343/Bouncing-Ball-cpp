@@ -37,7 +37,6 @@ target_link_libraries(main
     ${OPENGL_LIBRARIES} 
     ${GLEW_LIBRARIES} 
     glfw
-    TBB::tbb
     ${OpenCL_LIBRARIES}
     X11
 )

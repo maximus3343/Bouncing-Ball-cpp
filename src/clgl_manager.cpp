@@ -1,29 +1,31 @@
 #include "../include/clgl_manager.hpp"
-#include <CL/opencl.hpp>
+#include <CL/cl_platform.h>
 
-CLGL_Manager::CLGL_Manager(int num_balls) : _num_balls(num_balls) {}
+CLGL_Manager::CLGL_Manager(int num_balls, int num_vertices)
+    : _num_balls(num_balls), _num_vertices(num_vertices) {}
 
 CLGL_Manager::~CLGL_Manager() { glfwTerminate(); }
 
 GLFWwindow *CLGL_Manager::init(int width, int height) {
   // Initializes first OpenGL.
   init_GLFW();
-  auto window = create_window(width, height, "CLGL_Manager");
+  auto window = create_window(width, height, "Bouncing Ball");
   init_GLEW();
 
-  // Initializes OpenCL, and create a shared buffer to hold the Balls objects.
+  // Initializes OpenCL.
   init_opencl();
 
   // Create the balls.
-  std::vector<Ball> balls(_num_balls);
-  std::generate(balls.begin(), balls.end(), create_ball);
+  std::vector<Ball> balls;
+  balls.reserve(_num_balls);
+  std::generate_n(std::back_inserter(balls), _num_balls, create_ball);
 
   // Create the buffer of balls on device.
   _balls_buffer = cl::Buffer(_context, CL_MEM_READ_WRITE | CL_MEM_COPY_HOST_PTR,
                              _num_balls * sizeof(Ball), balls.data());
 
   // Create the vertices buffer shared by OpenCL and OpenGL.
-  create_vert_buffer();
+  create_vbo();
 
   init_program(kernel_source());
 
@@ -41,6 +43,10 @@ bool CLGL_Manager::init_GLFW() {
     fprintf(stderr, "Failed to initialize GLFW\n");
     return -1;
   }
+  // Set GLFW version and OpenGL profile.
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+  glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+  glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
   return 1;
 }
 
@@ -56,8 +62,7 @@ bool CLGL_Manager::init_GLEW() {
 
 GLFWwindow *CLGL_Manager::create_window(int width, int height,
                                         const std::string &title) {
-  auto window =
-      glfwCreateWindow(width, height, "Simple OpenGL CLGL_Manager", NULL, NULL);
+  auto window = glfwCreateWindow(width, height, title.data(), NULL, NULL);
 
   if (!window) {
     fprintf(stderr, "Failed to create GLFW window\n");
@@ -71,22 +76,12 @@ GLFWwindow *CLGL_Manager::create_window(int width, int height,
 void CLGL_Manager::init_opencl() {
 
   // Get Platform.
-  std::vector<cl::Platform> platforms(1);
+  std::array<cl::Platform, 1> platforms;
   if (platforms.empty()) {
     std::cerr << "No OpenCL platforms found." << std::endl;
     return;
   }
   _platform = platforms[0];
-
-  // Get CPU device.
-  for (const auto &platform : platforms) {
-    std::vector<cl::Device> devices;
-
-    platform.getDevices(CL_DEVICE_TYPE_CPU, &devices);
-    if (!devices.empty()) {
-      std::cout << "Found a CPU." << std::endl;
-    }
-  }
 
   // Get GPU device.
   std::vector<cl::Device> devices;
@@ -129,28 +124,60 @@ void CLGL_Manager::init_program(const std::string &kernel_source) {
   }
 }
 
-void CLGL_Manager::create_vert_buffer() {
+void CLGL_Manager::create_vbo() {
   // Create and bind VAO.
   glGenVertexArrays(1, &_vao);
   glBindVertexArray(_vao); // Stores binded VBO and vertex attrib ptr.
 
   // Generate a buffer object.
-  glGenBuffers(1, &_vertices_buffer_id);
-  glBindBuffer(
-      GL_ARRAY_BUFFER,
-      _vertices_buffer_id); // Bind the buffer to the GL_ARRAY_BUFFER target.
+  glGenBuffers(1, &_vbos[0]);
+  glBindBuffer(GL_ARRAY_BUFFER,
+               _vbos[0]); // Bind the buffer to the GL_ARRAY_BUFFER target.
 
-  // Allocate memory for the buffer (e.g., num_vertices * sizeof(float2) *
-  // num_balls)
-  glBufferData(GL_ARRAY_BUFFER, sizeof(cl_float2) * _num_vertices * _num_balls,
+  // Allocates memory for each vertex of each ball.
+  // Each vertex has 6 components, the RGB colors and (x,y,z).
+  glBufferData(GL_ARRAY_BUFFER, sizeof(cl_float3) * _num_vertices * _num_balls,
                nullptr, GL_DYNAMIC_DRAW);
 
   // Layout specified.
-  // Two comp (x, y) per attribute.
-  glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(GLfloat),
+  // Three components (x, y, z) per attribute.
+  glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(cl_float3),
                         (GLvoid *)0);
-
   glEnableVertexAttribArray(0); // Enables position attribute to be rendered.
+
+  // Get colors stored in GPU.
+  std::vector<Ball> host_balls(_num_balls);
+  // host_balls.reserve(_num_balls);
+  _queue.enqueueReadBuffer(_balls_buffer, CL_TRUE, 0, _num_balls * sizeof(Ball),
+                           host_balls.data());
+
+  // Get a one-dimension array of colors from all the balls.
+  // Colors will be structured as such: [R0, G0, B0, R1, G1, B1, ...].
+  auto get_colors = [&host_balls, this]() {
+    std::vector<float> colors;                      // Array of colors.
+    colors.reserve(3 * _num_balls * _num_vertices); // RGB for each vertex.
+    for (const Ball &ball : host_balls) {
+      const auto ball_colors = ball.colors;
+      // One single color for all vertices of a Ball.
+      for (int j = 0; j < _num_vertices; j++) {
+        colors.emplace_back(ball_colors[0]);
+        colors.emplace_back(ball_colors[1]);
+        colors.emplace_back(ball_colors[2]);
+      }
+    }
+    return colors;
+  };
+
+  // Generate and bind the color VBO.
+  glGenBuffers(1, &_vbos[1]);
+  glBindBuffer(GL_ARRAY_BUFFER, _vbos[1]);
+  glBufferData(GL_ARRAY_BUFFER, 3 * sizeof(float) * _num_balls * _num_vertices,
+               get_colors().data(), GL_STATIC_DRAW);
+  // Setting up the RGB.
+  // Stored in an different VBO, not interleaved with positions.
+  glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float),
+                        (GLvoid *)(0));
+  glEnableVertexAttribArray(1);
 
   // Unbind the VAO to avoid accidental modifications.
   glBindVertexArray(0);
@@ -160,8 +187,7 @@ void CLGL_Manager::create_vert_buffer() {
   try {
     // Creates and assign our vertex buffer.
     // Size is defined by the underlying OpenGL buffer.
-    _vertices_buffer =
-        cl::BufferGL(_context, CL_MEM_READ_WRITE, _vertices_buffer_id);
+    _vbo_cl = cl::BufferGL(_context, CL_MEM_READ_WRITE, _vbos[0]);
   } catch (const cl::Error &e) {
     std::cerr << "OpenCL Error: " << e.what() << " (" << e.err() << ")"
               << std::endl;
@@ -171,13 +197,28 @@ void CLGL_Manager::create_vert_buffer() {
 void CLGL_Manager::update_vertices() {
   static cl::Kernel kernel = try_kernel(_program, "compute_ball_vertices");
   kernel.setArg(0, _balls_buffer);
-  kernel.setArg(1, _vertices_buffer);
+  kernel.setArg(1, _vbo_cl);
   kernel.setArg(2, _num_balls);
   kernel.setArg(3, _num_vertices);
 
-  //_queue.enqueueAcquireGLObjects(&_vertices_buffer);
+  //_queue.enqueueAcquireGLObjects(&_vbo_cl);
   try {
     _queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(_num_balls));
+  } catch (const cl::Error &e) {
+    std::cerr << "OpenCL Error: " << e.what() << " (" << e.err() << ")"
+              << std::endl;
+  }
+}
+
+void CLGL_Manager::print_vertices() {
+  static cl::Kernel kernel = try_kernel(_program, "print_vertices");
+  kernel.setArg(0, _vbo_cl);
+  kernel.setArg(1, _num_balls);
+  kernel.setArg(2, _num_vertices);
+
+  // Num of work items is dependent on num_balls.
+  try {
+    _queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(1));
   } catch (const cl::Error &e) {
     std::cerr << "OpenCL Error: " << e.what() << " (" << e.err() << ")"
               << std::endl;
@@ -236,6 +277,7 @@ void CLGL_Manager::update_balls() {
 void CLGL_Manager::draw_balls() {
   update_vertices();
   glBindVertexArray(_vao); // Get the binded VBO and vertex attrib.
+  // print_vertices();
   for (int i = 0; i < _num_balls; i++)
     glDrawArrays(GL_TRIANGLE_FAN, _num_vertices * i, _num_vertices);
   glBindVertexArray(0);

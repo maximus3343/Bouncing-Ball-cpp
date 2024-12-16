@@ -1,15 +1,16 @@
 #include "../include/display.hpp"
 #include <GLFW/glfw3.h>
-#include <cstdlib>
 
 // Vertex shader source code
 const char *vertexShaderSource = R"(
     #version 330 core
-    layout (location = 0) in vec2 aPos; // Takes (x,y) as input.
+    layout (location = 0) in vec3 pos; // Takes (x,y,z) as input.
     layout (location = 1) in vec3 color;
+
+    out vec3 frag_color;
     void main() {
-        gl_Position = vec4(aPos, 1.0, 1.0);
-        frag_color = color; // Pass vertex color to fragment shader.
+        gl_Position = vec4(pos, 1.0);
+        frag_color = color;
     }
 )";
 
@@ -19,7 +20,7 @@ const char *fragmentShaderSource = R"(
     in vec3 frag_color;
     out vec4 final_color;
     void main() {
-        final_color = vec4(frag_color, 1.0);  // Set the triangle color to green
+        final_color = vec4(frag_color, 1.0);
     }
 )";
 

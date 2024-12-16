@@ -98,11 +98,11 @@ int main() {
   }
 
   // Define the vertex data for a triangle
-  GLfloat vertices[] = {
-      0.0f,  0.5f,  0.0f, // top vertex
-      -0.5f, -0.5f, 0.0f, // bottom left vertex
-      0.5f,  -0.5f, 0.0f  // bottom right vertex
-  };
+  GLfloat vertices[] = {0.567526f,  -0.785155f, 0.0f, // top vertex
+                        0.6175f,    -0.785155f, 0.0f, // bottom left vertex
+                        0.567526f,  -0.735155f, 0.0f,       0.517526f,
+                        -0.785154f, 0.0f,       0.567526f,  -0.835155f,
+                        0.0f,       0.6175f,    -0.785155f, 0.0f};
 
   // Generate and bind the Vertex Array Object (VAO)
   GLuint VAO, VBO;
@@ -112,7 +112,7 @@ int main() {
 
   // Generate and bind the Vertex Buffer Object (VBO)
   glBindBuffer(GL_ARRAY_BUFFER, VBO);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+  glBufferData(GL_ARRAY_BUFFER, 18 * sizeof(float), vertices, GL_STATIC_DRAW);
 
   // Set up vertex attribute pointers
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat),
@@ -140,7 +140,7 @@ int main() {
     glBindVertexArray(VAO);
 
     // Draw the triangle
-    glDrawArrays(GL_TRIANGLES, 0, 3);
+    glDrawArrays(GL_TRIANGLE_FAN, 0, 6);
 
     // Swap buffers
     glfwSwapBuffers(window);
