@@ -23,8 +23,12 @@ public:
   // Returns window to be used by OpenGL.
   GLFWwindow *init(int width, int height);
 
+  // Update all the ball positions, handle their collisions with other balls and
+  // boundaries.
   void update_balls();
 
+  // Uses the buffer of vertices vbo_cl stored on the GPU to draw the balls with
+  // OpenGL.
   void draw_balls();
 
 private:
@@ -53,10 +57,10 @@ private:
 
   GLFWwindow *create_window(int width, int height, const std::string &title);
 
-  // Create the vert_buffer shared b/w OpenGL and OpenCL.
+  // Create the buffer of vertices shared b/w OpenGL and OpenCL.
   void create_vbo();
 
-  // Given the current pos_buffer, update the vertices.
+  // Given the current ball position, update the vertices stored in the vbo_cl.
   void update_vertices();
 
   // Print the vertices. For debugging only.
@@ -66,6 +70,7 @@ private:
   void update_pos();
 
   // Handles collisions with the walls.
+  // Also handles the gravity for the balls.
   void handle_wall_colls();
 
   // Handles collisions with balls.

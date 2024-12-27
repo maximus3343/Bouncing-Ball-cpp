@@ -66,3 +66,12 @@ GLuint create_shader_program(const std::string &vertexShaderSource,
 
   return shaderProgram;
 }
+
+void adjust_window_size(GLFWwindow *window, int width, int height) {
+  if (height == 0)
+    height = 1;
+  if (width == 0)
+    width = 1;
+
+  glViewport(0, 0, width, height);
+}

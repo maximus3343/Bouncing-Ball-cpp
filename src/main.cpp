@@ -1,5 +1,7 @@
+#include "../include/args.hpp"
 #include "../include/clgl_manager.hpp"
 #include "../include/fps.hpp"
+#include <GLFW/glfw3.h>
 
 // Window size.
 constexpr int width = 1600, height = 1600;
@@ -8,9 +10,9 @@ constexpr int target_fps = 60;
 
 int main(int argc, char *argv[]) {
 
-  // Creates the balls and stores them in the program.
-  int num_balls = std::stoi(argv[1]);
-  int num_vertices = std::stoi(argv[2]);
+  int num_balls, num_vertices = 0;
+
+  process_args(argc, argv, num_balls, num_vertices);
 
   CLGL_Manager prog(num_balls, num_vertices);
   auto window = prog.init(width, height);
@@ -19,6 +21,9 @@ int main(int argc, char *argv[]) {
   FPS_Cap fps_cap(target_fps); // Limit FPS.
 
   std::cout << "GLFW version: " << glfwGetVersionString() << std::endl;
+
+  // Registers a callback function called whenever the specified window changes.
+  glfwSetFramebufferSizeCallback(window, adjust_window_size);
 
   // Main loop
   while (!glfwWindowShouldClose(window)) {
