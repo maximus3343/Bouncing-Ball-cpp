@@ -10,15 +10,11 @@ This project is a simulation of bouncing balls using OpenGL for rendering and Op
 + Balls bounce off each other and the boundaries of the simulation space.
 + Collision computations are performed on the GPU using OpenCL.
 + No synchronization between host and GPU, ensuring high performance.
-+ Command-line interface (CLI) for easy configuration of the simulation parameters.
 
 ## Requirements
 
-+ CMake (for building the project)
 + OpenGL (for rendering)
 + OpenCL (for GPU computations)
-+ Compatible GPU with OpenCL support
-+ C++ compiler (e.g., g++, clang++)
 
 + You can run the program with the following command-line arguments:
 
@@ -33,8 +29,8 @@ If no arguments are provided, the program will use the following default values:
 
 ## Example
 
-To run the program with 5 balls and 10 vertices, use:
+To run the program with 10 balls and 100 vertices, use:
 
 ```bash
 cd build
-cmake .. && make && ./my_program --balls 10 --vertices 100
+cmake .. && make && ./main --balls 10 --vertices 100
