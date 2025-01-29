@@ -16,12 +16,12 @@ This project is a simulation of bouncing balls using OpenGL for rendering and Op
 + OpenGL (for rendering)
 + OpenCL (for GPU computations)
 
-+ You can run the program with the following command-line arguments:
+## Default Values
+
+You can run the program with the following command-line arguments:
 
 - `--balls` or `-b`: Specify the number of balls.
 - `--vertices` or `-v`: Specify the number of vertices.
-
-## Default Values
 
 If no arguments are provided, the program will use the following default values:
 - **Number of balls**: 5
