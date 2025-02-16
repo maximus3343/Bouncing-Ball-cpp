@@ -3,6 +3,8 @@
 
 This project is a simulation of bouncing balls using OpenGL for rendering and OpenCL for parallel computation of ball physics. An arbitrary number of balls can be spawned with random initial positions and velocities, and they interact with each other and the boundaries of the simulation space. The elastic collision detections and responses are computed on the GPU using OpenCL, allowing for efficient handling of multiple balls on the GPU.
 
+![Ball Screenshot](ball_screenshot.png)
+
 ## Features
 
 + Spawn an arbitrary number of balls with random initial positions and velocities.
